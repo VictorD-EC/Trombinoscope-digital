@@ -51,6 +51,35 @@ function initializeTeamMembers() {
     console.log("Membres par service :", teamMembers);
 }
 
+// Fonction pour extraire nom et prénom à partir de la chaîne "service-Nom-Prenom"
+function extractNameParts(fullName) {
+    // Si le format contient "-", on extrait les parties
+    if (fullName.includes('-')) {
+        const parts = fullName.split('-');
+        // S'il y a au moins 3 parties (service-nom-prénom)
+        if (parts.length >= 3) {
+            // Le nom est la 2ème partie, le prénom est la 3ème et suivantes
+            return {
+                lastName: parts[1],
+                firstName: parts.slice(2).join(' ')
+            };
+        }
+        // S'il y a 2 parties (service-nom)
+        else if (parts.length === 2) {
+            return {
+                lastName: parts[1],
+                firstName: ''
+            };
+        }
+    }
+    
+    // Format par défaut si pas de tiret
+    return {
+        lastName: fullName,
+        firstName: ''
+    };
+}
+
 function clearMembersDisplay() {
     members.innerHTML = '';
 }
@@ -63,14 +92,14 @@ function updateActuDisplay() {
     
     if (currentActu.type.toLowerCase() === 'pdf') {
         const iframe = document.createElement('iframe');
-        iframe.src = `./${currentActu.fichier}`;  // Ajout de ./ pour le chemin relatif
+        iframe.src = `./${currentActu.fichier}`;
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = 'none';
         actu.appendChild(iframe);
     } else {
         const img = document.createElement('img');
-        img.src = `./${currentActu.fichier}`;  // Ajout de ./ pour le chemin relatif
+        img.src = `./${currentActu.fichier}`;
         img.alt = currentActu.titre;
         img.style.maxWidth = '100%';
         img.style.maxHeight = '100%';
@@ -93,13 +122,16 @@ async function displayPerson(person) {
     trombinoscope.classList.remove("hidden");
     actu.classList.add("hidden");
 
-    console.log(`Affichage de ${person.nom} avec la photo ${person.photo}`);
+    // Extraire le nom et prénom
+    const nameParts = extractNameParts(person.nom);
+    
+    console.log(`Affichage de ${nameParts.firstName} ${nameParts.lastName} avec la photo ${person.photo}`);
 
-    let member = new Member(
-        person.nom,
-        "",
-        "",
-        `./${person.photo}`  // Ajout de ./ pour le chemin relatif
+    new Member(
+        nameParts.lastName,
+        nameParts.firstName,
+        "",  // Le tag est vide car les membres sont déjà regroupés par service
+        `./${person.photo}`
     );
 }
 
@@ -110,7 +142,7 @@ async function displayTeamMembers(teamName) {
     }
 
     clearMembersDisplay();
-    teamH2.textContent = teamName;
+    teamH2.textContent = teamName.toUpperCase();
 
     const membersToDisplay = teamMembers[teamName].splice(0, 12);
     console.log(`Affichage de ${membersToDisplay.length} membres du service ${teamName} (${teamMembers[teamName].length} restants)`);
