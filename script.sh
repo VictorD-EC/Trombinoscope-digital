@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-OUTPUT_DIR=~/Documents/Trombinoscope_digital/www
+OUTPUT_DIR=~/Documents/Trombinoscope_digital/
 OUTPUT_FILE="$OUTPUT_DIR/datas.json"
 ASSETS_DIR="$OUTPUT_DIR/assets"
 LOG_FILE="$OUTPUT_DIR/../import.log"
