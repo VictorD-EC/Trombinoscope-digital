@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Configuration
-OUTPUT_DIR=~/Documents/Trombinoscope_digital/
-OUTPUT_FILE="$OUTPUT_DIR/datas.json"
-ASSETS_DIR="$OUTPUT_DIR/assets"
-LOG_FILE="$OUTPUT_DIR/../import.log"
+SITE_DIR=~/Trombinoscope-digital
+OUTPUT_FILE="$SITE_DIR/datas.json"
+ASSETS_DIR="$SITE_DIR/assets"
+LOG_FILE="$SITE_DIR/import.log"
 
 # Fonction de logging
 log() {
@@ -12,7 +12,7 @@ log() {
 }
 
 # Crée les répertoires nécessaires
-mkdir -p "$OUTPUT_DIR"
+mkdir -p "$SITE_DIR"
 mkdir -p "$ASSETS_DIR/Trombinoscope"
 mkdir -p "$ASSETS_DIR/Actu"
 touch "$LOG_FILE"
@@ -131,3 +131,77 @@ echo "  ]" >> "$OUTPUT_FILE"
 echo "}" >> "$OUTPUT_FILE"
 
 log "Traitement terminé. Fichier JSON créé: $OUTPUT_FILE"
+
+# Fonction pour détecter l'environnement de bureau
+get_desktop_environment() {
+    if [ -n "$DISPLAY" ]; then
+        if [ -n "$GNOME_DESKTOP_SESSION_ID" ] || [ "$XDG_CURRENT_DESKTOP" = "GNOME" ]; then
+            echo "GNOME"
+        elif [ "$XDG_CURRENT_DESKTOP" = "LXDE" ]; then
+            echo "LXDE"
+        else
+            echo "UNKNOWN"
+        fi
+    else
+        echo "NO_DISPLAY"
+    fi
+}
+
+# Fermer tous les navigateurs en cours
+log "Fermeture des navigateurs existants..."
+pkill chromium
+pkill chromium-browser
+pkill firefox
+sleep 2
+
+# Définir le chemin de la page web
+WEB_PAGE="$SITE_DIR/index.html"
+
+# Vérifier que la page existe
+if [ ! -f "$WEB_PAGE" ]; then
+    log "Erreur: Page web non trouvée: $WEB_PAGE"
+    exit 1
+fi
+
+# Déterminer l'environnement de bureau
+DE=$(get_desktop_environment)
+log "Environnement de bureau détecté: $DE"
+
+# Lancer le navigateur en plein écran
+case $DE in
+    "GNOME")
+        # Pour GNOME
+        export DISPLAY=:0
+        chromium-browser --kiosk --start-fullscreen "$WEB_PAGE" &
+        ;;
+    "LXDE")
+        # Pour Raspberry Pi OS avec LXDE (plus commun)
+        export DISPLAY=:0
+        chromium-browser --kiosk --disable-restore-session-state --noerrdialogs \
+            --disable-translate --no-first-run --fast --fast-start \
+            --disable-infobars --disable-features=TranslateUI \
+            --disable-session-crashed-bubble --simulate-outdated-no-au='Tue, 31 Dec 2099 23:59:59 GMT' \
+            --disable-component-update \
+            --start-fullscreen "$WEB_PAGE" &
+        ;;
+    *)
+        # Fallback générique
+        export DISPLAY=:0
+        chromium-browser --kiosk "$WEB_PAGE" &
+        ;;
+esac
+
+# Attendre que le navigateur se lance
+sleep 3
+
+# Si on utilise LXDE (Raspberry Pi OS), on peut aussi cacher le curseur
+if [ "$DE" = "LXDE" ]; then
+    unclutter -idle 0.1 -root &
+fi
+
+# Configuration supplémentaire pour empêcher la mise en veille de l'écran
+xset s off
+xset -dpms
+xset s noblank
+
+log "Page web lancée en plein écran"
