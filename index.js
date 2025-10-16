@@ -31,7 +31,6 @@ async function initialize() {
         return;
     }
 
-    // Extraire les équipes directement des services
     allTeams = data.services.map(service => service.name);
     console.log("Services détectés :", allTeams);
 
@@ -40,16 +39,14 @@ async function initialize() {
         return;
     }
 
-    // Initialiser les membres par équipe
     initializeTeamMembers();
-
     runRotation();
 }
 
 function initializeTeamMembers() {
     teamMembers = {};
     data.services.forEach(service => {
-        teamMembers[service.name] = [...service.collaborateurs]; // Copie du tableau pour pouvoir le modifier
+        teamMembers[service.name] = [...service.collaborateurs];
     });
     console.log("Membres par service :", teamMembers);
 }
@@ -66,14 +63,14 @@ function updateActuDisplay() {
     
     if (currentActu.type.toLowerCase() === 'pdf') {
         const iframe = document.createElement('iframe');
-        iframe.src = currentActu.fichier;
+        iframe.src = `./${currentActu.fichier}`;  // Ajout de ./ pour le chemin relatif
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = 'none';
         actu.appendChild(iframe);
     } else {
         const img = document.createElement('img');
-        img.src = currentActu.fichier;
+        img.src = `./${currentActu.fichier}`;  // Ajout de ./ pour le chemin relatif
         img.alt = currentActu.titre;
         img.style.maxWidth = '100%';
         img.style.maxHeight = '100%';
@@ -99,10 +96,10 @@ async function displayPerson(person) {
     console.log(`Affichage de ${person.nom} avec la photo ${person.photo}`);
 
     let member = new Member(
-        person.nom, // Le nom complet est dans le champ "nom"
-        "", // Pas de prénom séparé dans la nouvelle structure
-        "", // Pas de tag nécessaire car déjà groupé par service
-        person.photo // Chemin de la photo directement depuis le JSON
+        person.nom,
+        "",
+        "",
+        `./${person.photo}`  // Ajout de ./ pour le chemin relatif
     );
 }
 
@@ -163,5 +160,4 @@ async function runRotation() {
     }
 }
 
-// Démarrer l'application
 initialize();

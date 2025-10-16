@@ -3,6 +3,7 @@
 # Configuration
 OUTPUT_DIR=~/Documents/Trombinoscope_digital/www
 OUTPUT_FILE="$OUTPUT_DIR/datas.json"
+ASSETS_DIR="$OUTPUT_DIR/assets"
 LOG_FILE="$OUTPUT_DIR/../import.log"
 
 # Fonction de logging
@@ -11,8 +12,9 @@ log() {
 }
 
 # Crée les répertoires nécessaires
-mkdir -p "$OUTPUT_DIR/img/trombinoscope"
-mkdir -p "$OUTPUT_DIR/img/actu"
+mkdir -p "$OUTPUT_DIR"
+mkdir -p "$ASSETS_DIR/Trombinoscope"
+mkdir -p "$ASSETS_DIR/Actu"
 touch "$LOG_FILE"
 
 # Détection de la clé USB
@@ -34,6 +36,13 @@ if [ ! -d "$TROMBI_DIR" ] || [ ! -d "$ACTU_DIR" ]; then
     exit 1
 fi
 
+# Copier les dossiers depuis la clé USB vers assets
+log "Copie des dossiers vers assets..."
+rm -rf "$ASSETS_DIR/Trombinoscope"/*  # Nettoyer le dossier existant
+rm -rf "$ASSETS_DIR/Actu"/*           # Nettoyer le dossier existant
+cp -r "$TROMBI_DIR"/* "$ASSETS_DIR/Trombinoscope/"
+cp -r "$ACTU_DIR"/* "$ASSETS_DIR/Actu/"
+
 # Création du JSON
 cat > "$OUTPUT_FILE" << EOL
 {
@@ -47,7 +56,6 @@ for SERVICE_DIR in "$TROMBI_DIR"/*; do
     if [ -d "$SERVICE_DIR" ]; then
         SERVICE_NAME=$(basename "$SERVICE_DIR")
         
-        # Gestion de la virgule entre les services
         if [ "$FIRST_SERVICE" = true ]; then
             FIRST_SERVICE=false
         else
@@ -60,31 +68,24 @@ for SERVICE_DIR in "$TROMBI_DIR"/*; do
         echo "      \"name\": \"$SERVICE_NAME\"," >> "$OUTPUT_FILE"
         echo "      \"collaborateurs\": [" >> "$OUTPUT_FILE"
         
-        # Traitement des collaborateurs
         FIRST_COLLAB=true
         for COLLAB_FILE in "$SERVICE_DIR"/*; do
             if [ -f "$COLLAB_FILE" ]; then
                 FILENAME=$(basename "$COLLAB_FILE")
                 NAME="${FILENAME%.*}"
                 
-                # Gestion de la virgule entre les collaborateurs
                 if [ "$FIRST_COLLAB" = true ]; then
                     FIRST_COLLAB=false
                 else
                     echo "        }," >> "$OUTPUT_FILE"
                 fi
                 
-                # Copie de l'image
-                mkdir -p "$OUTPUT_DIR/img/trombinoscope/$SERVICE_NAME"
-                cp "$COLLAB_FILE" "$OUTPUT_DIR/img/trombinoscope/$SERVICE_NAME/$FILENAME"
-                
                 echo "        {" >> "$OUTPUT_FILE"
                 echo "          \"nom\": \"$NAME\"," >> "$OUTPUT_FILE"
-                echo "          \"photo\": \"img/trombinoscope/$SERVICE_NAME/$FILENAME\"" >> "$OUTPUT_FILE"
+                echo "          \"photo\": \"assets/Trombinoscope/$SERVICE_NAME/$FILENAME\"" >> "$OUTPUT_FILE"
             fi
         done
         
-        # Fermeture du dernier collaborateur
         if [ "$FIRST_COLLAB" = false ]; then
             echo "        }" >> "$OUTPUT_FILE"
         fi
@@ -92,12 +93,10 @@ for SERVICE_DIR in "$TROMBI_DIR"/*; do
     fi
 done
 
-# Fermeture du dernier service
 if [ "$FIRST_SERVICE" = false ]; then
     echo "    }" >> "$OUTPUT_FILE"
 fi
 
-# Début de la section actualités
 echo "  ]," >> "$OUTPUT_FILE"
 echo "  \"actualites\": [" >> "$OUTPUT_FILE"
 
@@ -109,7 +108,6 @@ for ACTU_FILE in "$ACTU_DIR"/*; do
         NAME="${FILENAME%.*}"
         EXT="${FILENAME##*.}"
         
-        # Gestion de la virgule entre les actualités
         if [ "$FIRST_ACTU" = true ]; then
             FIRST_ACTU=false
         else
@@ -118,20 +116,17 @@ for ACTU_FILE in "$ACTU_DIR"/*; do
         
         log "Traitement de l'actualité: $FILENAME"
         
-        # Copie du fichier
-        cp "$ACTU_FILE" "$OUTPUT_DIR/img/actu/$FILENAME"
-        
         echo "    {" >> "$OUTPUT_FILE"
         echo "      \"titre\": \"$NAME\"," >> "$OUTPUT_FILE"
         echo "      \"type\": \"$EXT\"," >> "$OUTPUT_FILE"
-        echo "      \"fichier\": \"img/actu/$FILENAME\"" >> "$OUTPUT_FILE"
+        echo "      \"fichier\": \"assets/Actu/$FILENAME\"" >> "$OUTPUT_FILE"
     fi
 done
 
-# Fermeture de la dernière actualité et du JSON
 if [ "$FIRST_ACTU" = false ]; then
     echo "    }" >> "$OUTPUT_FILE"
 fi
+
 echo "  ]" >> "$OUTPUT_FILE"
 echo "}" >> "$OUTPUT_FILE"
 
