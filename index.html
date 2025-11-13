@@ -19,5 +19,25 @@
     <div id="actu" class="hidden">
         <img src="" alt="">
     </div>
+<script>
+  let lastUpdate = null;
+
+  async function checkUpdate() {
+    try {
+      const response = await fetch('/datas.json?_=' + new Date().getTime());
+      const data = await response.json();
+
+      if (!lastUpdate) {
+        lastUpdate = data.lastUpdate;
+      } else if (lastUpdate !== data.lastUpdate) {
+        location.reload();
+      }
+    } catch (e) {
+      console.error('Erreur lors de la vérification de mise à jour:', e);
+    }
+  }
+
+  setInterval(checkUpdate, 5000); // Vérifie toutes les 5 secondes
+</script>
 </body>
 </html>
